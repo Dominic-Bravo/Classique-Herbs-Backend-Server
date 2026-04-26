@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
 from api.models import Customer
-from api.seializers import CustomerSerializer
+from api.serializers import CustomerSerializer
 
 class CustomerViewSet(viewsets.ModelViewSet):
     """
