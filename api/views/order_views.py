@@ -14,8 +14,18 @@ class OrderViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             return Order.objects.filter(customer__email=user.email)
 
-        psid = self.request.query_params.get('psid')
+        psid = self.request.query_params.get('psid') or self.request.session.get('psid')
         if psid:
             return Order.objects.filter(customer__psid=psid)
 
+        email = self.request.query_params.get('email')
+        if email:
+            return Order.objects.filter(customer__email=email)
+
         return Order.objects.none()
+
+    def perform_create(self, serializer):
+        order = serializer.save()
+        if not self.request.user.is_authenticated and order.customer.psid:
+            self.request.session['psid'] = order.customer.psid
+        return order
