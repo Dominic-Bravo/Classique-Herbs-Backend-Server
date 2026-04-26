@@ -1,7 +1,6 @@
-from decimal import Decimal
-
 from rest_framework import serializers
-from api.models import Customer, Order, OrderItem
+from api.models import Order, OrderItem
+from api.services.order_service import OrderService
 from .customer import CustomerSerializer
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -25,42 +24,6 @@ class OrderSerializer(serializers.ModelSerializer):
         if not customer_data:
             raise serializers.ValidationError({'customer': 'Customer information is required.'})
 
-        customer = self._get_or_create_customer(customer_data)
+        return OrderService.create_order(validated_data, customer_data, items_data)
 
-        order = Order.objects.create(customer=customer, **validated_data)
 
-        total_amount = Decimal('0')
-        for item in items_data:
-            order_item = OrderItem.objects.create(
-                order=order,
-                product=item['product'],
-                quantity=item['quantity'],
-                price_at_purchase=item['price_at_purchase'],
-            )
-            total_amount += order_item.price_at_purchase * order_item.quantity
-
-        order.total_amount = total_amount
-        order.save()
-        return order
-
-    def _get_or_create_customer(self, customer_data):
-        psid = customer_data.get('psid')
-        email = customer_data.get('email')
-
-        if psid:
-            customer, created = Customer.objects.get_or_create(psid=psid, defaults=customer_data)
-            if not created:
-                for attr, value in customer_data.items():
-                    setattr(customer, attr, value)
-                customer.save()
-            return customer
-
-        if email:
-            customer, created = Customer.objects.get_or_create(email=email, defaults=customer_data)
-            if not created:
-                for attr, value in customer_data.items():
-                    setattr(customer, attr, value)
-                customer.save()
-            return customer
-
-        return Customer.objects.create(**customer_data)

@@ -17,9 +17,4 @@ class CustomerViewSet(viewsets.ModelViewSet):
         Ensure customers can only see their own profile.
         Staff can see all customers.
         """
-        user = self.request.user
-        if user.is_staff:
-            return Customer.objects.all()
-        
-        # Assuming you link your Customer model to the Django User
-        return Customer.objects.filter(email=user.email)
+        return Customer.objects.for_request(self.request)
